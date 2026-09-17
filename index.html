@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Generar reserva</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+    }
+
+    .contenedor {
+      max-width: 500px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      text-align: center;
+      margin: 0 0 25px 0;
+      font-size: 24px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px;
+      font-size: 17px;
+      border: 1px solid #ccc;
+      border-radius: 7px;
+    }
+
+    .fila {
+      display: flex;
+      gap: 10px;
+    }
+
+    .fila > div {
+      flex: 1;
+    }
+
+    .botones {
+      display: flex;
+      gap: 10px;
+      margin-top: 25px;
+    }
+
+    button {
+      flex: 1;
+      padding: 15px;
+      font-size: 17px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #btnGenerar {
+      background: #198754;
+      color: white;
+    }
+
+    #btnLimpiar {
+      background: #ddd;
+      color: #222;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    #resultado {
+      display: none;
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: bold;
+      white-space: pre-wrap;
+    }
+
+    .exito {
+      display: block !important;
+      background: #d1e7dd;
+      color: #0f5132;
+    }
+
+    .error {
+      display: block !important;
+      background: #f8d7da;
+      color: #842029;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="contenedor">
+
+    <h1>Generar reserva</h1>
+
+    <label for="nombre">Nombre</label>
+    <input
+      type="text"
+      id="nombre"
+      autocomplete="name"
+    >
+
+    <label for="telefono">Teléfono</label>
+    <input
+      type="tel"
+      id="telefono"
+      inputmode="numeric"
+      pattern="[0-9]*"
+      autocomplete="tel"
+      oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+    >
+
+    <label for="dni">DNI</label>
+    <input
+      type="text"
+      id="dni"
+      inputmode="numeric"
+      pattern="[0-9]*"
+      oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+    >
+
+    <label for="tipoSalto">Tipo de salto (opcional)</label>
+    <input
+      type="text"
+      id="tipoSalto"
+    >
+
+    <label for="monto">Monto</label>
+    <input
+      type="number"
+      id="monto"
+      value="100000"
+      inputmode="numeric"
+    >
+
+    <div class="fila">
+
+      <div>
+        <label for="fecha">Fecha</label>
+        <input
+          type="date"
+          id="fecha"
+        >
+      </div>
+
+      <div>
+        <label for="hora">Hora</label>
+        <input
+          type="time"
+          id="hora"
+        >
+      </div>
+
+    </div>
+
+    <label for="cantidad">Cantidad (opcional)</label>
+    <input
+      type="number"
+      id="cantidad"
+      value="1"
+      min="1"
+      inputmode="numeric"
+    >
+
+    <div class="botones">
+
+      <button
+        id="btnGenerar"
+        onclick="generarReserva()"
+      >
+        Generar reserva
+      </button>
+
+      <button
+        id="btnLimpiar"
+        onclick="limpiar()"
+      >
+        Limpiar
+      </button>
+
+    </div>
+
+    <div id="resultado"></div>
+
+  </div>
+
+
+  <script>
+
+    const URL_SERVICIO =
+      "https://script.google.com/macros/s/AKfycbxUcGu1gkK6oqJKdD8ELXMA5IMxH6_Yar2Wf2-GA5grlqN2lw-tccg9piPcPkY1FGtf/exec";
+
+
+    async function generarReserva() {
+
+      const nombre =
+        document.getElementById("nombre").value.trim();
+
+      const telefono =
+        document.getElementById("telefono").value.trim();
+
+      const dni =
+        document.getElementById("dni").value.trim();
+
+      const tipoSalto =
+        document.getElementById("tipoSalto").value.trim();
+
+      const monto =
+        document.getElementById("monto").value;
+
+      const fecha =
+        document.getElementById("fecha").value;
+
+      const hora =
+        document.getElementById("hora").value;
+
+      const cantidad =
+        document.getElementById("cantidad").value || 1;
+
+      const resultado =
+        document.getElementById("resultado");
+
+      const boton =
+        document.getElementById("btnGenerar");
+
+
+      if (!nombre || !telefono || !dni || !fecha || !hora) {
+
+        resultado.className = "error";
+
+        resultado.textContent =
+          "Completá nombre, teléfono, DNI, fecha y hora.";
+
+        return;
+      }
+
+
+      resultado.className = "";
+      resultado.style.display = "block";
+      resultado.textContent = "Generando reserva...";
+
+      boton.disabled = true;
+
+
+      try {
+
+        const params = new URLSearchParams();
+
+        params.append("nombre", nombre);
+        params.append("telefono", telefono);
+        params.append("dni", dni);
+        params.append("monto", monto);
+        params.append("fecha", fecha);
+        params.append("hora", hora);
+        params.append("cantidad", cantidad);
+
+        if (tipoSalto !== "") {
+          params.append("tipoSalto", tipoSalto);
+        }
+
+
+        const url =
+          URL_SERVICIO + "?" + params.toString();
+
+
+        const respuesta =
+          await fetch(url);
+
+
+        if (!respuesta.ok) {
+          throw new Error(
+            "Error HTTP " + respuesta.status
+          );
+        }
+
+
+        const datos =
+          await respuesta.json();
+
+
+        if (datos.ok) {
+
+          resultado.className = "exito";
+
+          resultado.textContent =
+            "✓ Reserva generada correctamente";
+
+
+          setTimeout(() => {
+            limpiar();
+          }, 2000);
+
+        } else {
+
+          resultado.className = "error";
+
+          resultado.textContent =
+            "No se pudo generar la reserva:\n" +
+            (datos.error || "Error desconocido");
+
+          boton.disabled = false;
+        }
+
+
+      } catch (error) {
+
+        resultado.className = "error";
+
+        resultado.textContent =
+          "No se pudo conectar con el servicio.\n\n" +
+          error.message;
+
+        boton.disabled = false;
+      }
+
+    }
+
+
+    function limpiar() {
+
+      document.getElementById("nombre").value = "";
+      document.getElementById("telefono").value = "";
+      document.getElementById("dni").value = "";
+      document.getElementById("tipoSalto").value = "";
+      document.getElementById("monto").value = "100000";
+      document.getElementById("fecha").value = "";
+      document.getElementById("hora").value = "";
+      document.getElementById("cantidad").value = "1";
+
+
+      const resultado =
+        document.getElementById("resultado");
+
+      resultado.className = "";
+      resultado.style.display = "none";
+      resultado.textContent = "";
+
+
+      document.getElementById("btnGenerar").disabled = false;
+
+      document.getElementById("nombre").focus();
+
+    }
+
+  </script>
+
+</body>
+</html>
+
